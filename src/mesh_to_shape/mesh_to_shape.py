@@ -16,91 +16,6 @@ def calculate_volume_of_a_mesh(mesh):
     return volume
 
 
-def mujoco_creator(primitive_objects_db, xml_path):
-    xml_path = "../resources/output/default.xml"
-
-    mj_model = mujoco.MjModel.from_xml_path(xml_path)
-    mj_spec = mujoco.MjSpec()
-
-    body = mj_spec.worldbody.add_body(
-        pos=[0, 0, 1],
-        quat=[1, 0, 0, 0],
-    )
-    for mesh_name, properties in primitive_objects_db.items():
-        (type_of_figure,
-         size_x,
-         size_y,
-         size_z,
-         volume,
-         deviation,
-         object_name,
-         pos_x,
-         pos_y,
-         pos_z,
-         object_r,
-         object_g,
-         object_b,
-         object_a,
-         quat_x,
-         quat_y,
-         quat_z,
-         quat_w,
-         object_geom_class
-         ) = properties
-        print(pos_x, pos_y, pos_z, type(pos_x), type(pos_y), type(pos_z))
-        if type_of_figure == 'box':
-            geom = body.add_geom(
-                name=object_name,
-                type=mujoco.mjtGeom.mjGEOM_BOX,
-                size=[size_x, size_y, size_z],
-                pos=[pos_x, pos_y, pos_z],
-                rgba=[1, 1, 1, 1],
-                quat=[quat_x, quat_y, quat_z, quat_w]
-            )
-        elif type_of_figure == 'cylinder':
-            geom = body.add_geom(
-                name=object_name,
-                type=mujoco.mjtGeom.mjGEOM_CYLINDER,
-                size=[size_x, size_z, 0],
-                pos=[pos_x, pos_y, pos_z],
-                rgba=[1, 1, 1, 1],
-                quat=[quat_x, quat_y, quat_z, quat_w]
-            )
-        elif type_of_figure == 'sphere':
-            geom = body.add_geom(
-                name=object_name,
-                type=mujoco.mjtGeom.mjGEOM_SPHERE,
-                size=[size_x, 0, 0],
-                pos=[pos_x, pos_y, pos_z],
-                rgba=[1, 1, 1, 1],
-                quat=[quat_x, quat_y, quat_z, quat_w]
-            )
-        elif type_of_figure == 'ellipsoid':
-            geom = body.add_geom(
-                name=object_name,
-                type=mujoco.mjtGeom.mjGEOM_ELLIPSOID,
-                size=[size_x, size_y, size_z],
-                pos=[pos_x, pos_y, pos_z],
-                rgba=[1, 1, 1, 1],
-                quat=[quat_x, quat_y, quat_z, quat_w]
-            )
-        elif type_of_figure == 'capsule':
-            geom = body.add_geom(
-                name=object_name,
-                type=mujoco.mjtGeom.mjGEOM_CAPSULE,
-                size=[size_x, size_z, 0],
-                pos=[pos_x, pos_y, pos_z],
-                rgba=[1, 1, 1, 1],
-                quat=[quat_x, quat_y, quat_z, quat_w]
-            )
-
-    mj_model = mj_spec.compile()
-    xml_string = mj_spec.to_xml()
-
-    with open(xml_path, "w") as f:
-        f.write(xml_string)
-
-
 def extract_characteristics():
     for obj in bpy.data.objects:
         model_name = obj.name
@@ -162,41 +77,35 @@ def extract_characteristics():
             dimension_z = dicc_of_figures[option][2]
             volume_of_figure = dicc_of_figures[option][3]
             lowest_error_value = dicc_of_figures[option][4]
-
             return option, dimension_x, dimension_y, dimension_z, volume_of_figure, lowest_error_value
 
-            '''
-            diccionary_of_figures
-            {FIGURE : [X, Y, Z, VOLUME, ERROR]}
-            ex:
-                {'box': [0.0026868656277656555, 0.15625163912773132, 0.2894858419895172, 0.00012153401845522237, 2.9431774328138186e-06]}
-            '''
-
+            #diccionary_of_figures
+            #{FIGURE : [X, Y, Z, VOLUME, ERROR]}
+            #ex:
+            #    {'box': [0.0026868656277656555, 0.15625163912773132, 0.2894858419895172, 0.00012153401845522237, 2.9431774328138186e-06]}
         else:
             print("No mesh found, try again")
             return None
 
 
-def parse_mujoco_xml(file_name):
-    data_dict = {}
-    tree = ET.parse(file_name)
+def parse_mujoco_xml(file_path: str, valid_classes: list):
+    tree = ET.parse(file_path)
     root = tree.getroot()
-    for geom in root.findall(".//geom"):
-        name = geom.get("name")
+
+    geom_dict = {}
+
+    for geom in root.iter('geom'):
+        name = geom.attrib.get('name')
         mesh = geom.get("mesh")
         pos = geom.get("pos")
-        rgba = geom.get("rgba")
         quat = geom.get("quat")
+        size = geom.get("size")
+        rgba = geom.get("rgba")
         geom_class = geom.get("class")
+        type = geom.get("type")
 
-        if mesh:
-            data_dict[mesh] = [
-                name,
-                pos,
-                rgba,
-                quat,
-                geom_class
-            ]
+        if geom_class not in valid_classes:
+            continue
 
         if pos:
             pos_x, pos_y, pos_z = map(float, pos.split())
@@ -204,115 +113,289 @@ def parse_mujoco_xml(file_name):
             pos_x = pos_y = pos_z = None
 
         if quat:
-            quat_x, quat_y, quat_z, quat_w = map(float, quat.split())
+            quat_w, quat_x, quat_y, quat_z = map(float, quat.split())
         else:
-            quat_x = quat_y = quat_z = quat_w = None
-
+            quat_w = quat_x = quat_y = quat_z = None
         if rgba:
             r, g, b, a = map(float, rgba.split())
         else:
             r = g = b = a = None
-
-        if mesh:
-            data_dict[mesh] = [
-                name,       # 0
-                pos_x,      # 1
-                pos_y,      # 2
-                pos_z,      # 3
-                r,              # 4
-                g,          # 5
-                b,          # 6
-                a,          # 7
-                quat_x,     # 8
-                quat_y,     # 9
-                quat_z,     # 10
-                quat_w,     # 11
-                geom_class  # 12
-            ]
-    return data_dict
-
-def merge_databases(figures_db, geom_data):
-    for mesh, geom_details in geom_data.items():
-        if mesh in figures_db:
-            figures_db[mesh].extend(geom_details)
-    return figures_db
-
-
-def clean_merged_db(merged_db):
-    cleaned_db = {}
-    no_position_db = {}
-
-    for mesh, details in merged_db.items():
-        pos_x, pos_y, pos_z = details[7], details[8], details[9]
-
-        if pos_x is None or pos_y is None or pos_z is None:
-            no_position_db[mesh] = details
+        if size:
+            try:
+                size_x, size_y, size_z = map(float, size.split())
+            except:
+                size_x = map(float, size)
+                size_y = size_z = None
         else:
-            cleaned_db[mesh] = details
+            size_x = size_y = size_z = None
 
-    return cleaned_db, no_position_db
+        if name:
+            geom_dict[name] = {
+                "pos_x": pos_x,
+                "pos_y": pos_y,
+                "pos_z": pos_z,
+                "quat_w": quat_w,  # x
+                "quat_x": quat_x,  # y
+                "quat_y": quat_y,  # z
+                "quat_z": quat_z,  # w
+                "red": r,
+                "green": g,
+                "blue": b,
+                "a": a,
+                "mesh": mesh,
+                "type": type,
+                "size_x": size_x,
+                "size_y": size_y,
+                "size_z": size_z,
+                "geom_class": geom_class,
+            }
+    return geom_dict
 
 
-def mesh_to_shape(blend_directory: str, read_xmlfile_name: str,xml_path):
+def extract_body_properties(xml_path_input: str):
+    tree = ET.parse(xml_path_input)
+    root = tree.getroot()
+
+    body_properties = {}
+
+    def extract_bodies(element, parent_name=None):
+        for body in element.findall("body"):
+            body_name = body.get("name")
+            pos = body.get("pos", "0 0 0").split()
+            quat = body.get("quat", "1 0 0 0").split()
+            list_of_geom = [geom.get("name") for geom in body.findall("geom")]
+
+            body_properties[body_name] = {
+                "pos": [float(pos_value) for pos_value in pos],
+                "quat": [float(quat_value) for quat_value in quat],
+                "listofgeom": list_of_geom,
+                "parent": parent_name
+            }
+            extract_bodies(body, body_name)
+
+    for worldbody in root.findall(".//worldbody"):
+        extract_bodies(worldbody)
+
+    return body_properties
+
+
+def mujoco_creator(body_dict: dict, primitive_objects_db: dict, xml_path_output: str):
+    mj_spec = mujoco.MjSpec()
+    body_references = {}
+
+    worldbody = mj_spec.worldbody
+
+    for body_name, body_values in body_dict.items():
+        if body_values["parent"] is None:
+            body = worldbody.add_body(
+                name=body_name + "_prim",
+                pos=body_values["pos"],
+                quat=body_values["quat"],
+            )
+            body_references[body_name] = body
+
+    for body_name, body_values in body_dict.items():
+        parent_name = body_values["parent"]
+        if parent_name is not None:
+            parent_body = body_references.get(parent_name)
+            if parent_body:
+                body = parent_body.add_body(
+                    name=body_name + "_prim",
+                    pos=body_values["pos"],
+                    quat=body_values["quat"],
+                )
+                body_references[body_name] = body
+
+    for body_name, body_values in body_dict.items():
+        body = body_references.get(body_name)
+        if body is None:
+            continue
+        for mesh_name in body_values["listofgeom"]:
+            if mesh_name in primitive_objects_db:
+                properties = primitive_objects_db[mesh_name]
+                pos_x = properties["pos_x"]
+                pos_y = properties["pos_y"]
+                pos_z = properties["pos_z"]
+                quat_w = properties["quat_w"]
+                quat_x = properties["quat_x"]
+                quat_y = properties["quat_y"]
+                quat_z = properties["quat_z"]
+                object_r = properties["red"]
+                object_g = properties["green"]
+                object_b = properties["blue"]
+                object_a = properties["a"]
+                mesh_type = properties["mesh"]
+                type_of_figure = properties["type"]
+                size_x = properties["size_x"]
+                size_y = properties["size_y"]
+                size_z = properties["size_z"]
+                object_geom_class = properties["geom_class"]
+
+                if type_of_figure == 'box' and mesh_type is not None:
+                    if pos_x is None:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_BOX,
+                            size=[size_x / 2, size_y / 2, size_z / 2],
+                            pos=[0, 0, 0],
+                            quat=[1.0, 0.0, 0.0, 0.0]
+                        )
+                    else:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_BOX,
+                            size=[size_x / 2, size_y / 2, size_z / 2],
+                            pos=[pos_x, pos_y, pos_z],
+                            quat=[quat_w, quat_x, quat_y, quat_z]
+                        )
+                elif type_of_figure == 'cylinder' and mesh_type is not None:
+                    if pos_x is None:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_CYLINDER,
+                            size=[size_x / 2, size_y / 2, 0.0],
+                            pos=[0.0, 0.0, 0.0],
+                            quat=[1.0, 0.0, 0.0, 0.0]
+                        )
+                    else:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_CYLINDER,
+                            size=[size_x / 2, size_y / 2, 0],
+                            pos=[pos_x, pos_y, pos_z],
+                            quat=[quat_w, quat_x, quat_y, quat_z]
+                        )
+                elif type_of_figure == 'sphere' and mesh_type is not None:
+                    if pos_x is None:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+                            size=[size_x / 2, 0, 0],
+                            pos=[0.0, 0.0, 0.0],
+                            quat=[1.0, 0.0, 0.0, 0.0]
+                        )
+                    else:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+                            size=[size_x / 2, 0, 0],
+                            pos=[pos_x, pos_y, pos_z],
+                            quat=[quat_w, quat_x, quat_y, quat_z]
+                        )
+                elif type_of_figure == 'ellipsoid' and mesh_type is not None:
+                    if pos_x is None:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_ELLIPSOID,
+                            size=[size_x / 2, size_y / 2, size_z / 2],
+                            pos=[0.0, 0.0, 0.0],
+                            quat=[1.0, 0.0, 0.0, 0.0]
+                        )
+                    else:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_ELLIPSOID,
+                            size=[size_x / 2, size_y / 2, size_z / 2],
+                            pos=[pos_x, pos_y, pos_z],
+                            quat=[quat_w, quat_x, quat_y, quat_z]
+                        )
+                elif type_of_figure == 'capsule' and mesh_type is not None:
+                    if pos_x is None:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                            size=[size_x / 2, size_z / 2, 0],
+                            pos=[0.0, 0.0, 0.0],
+                            quat=[1.0, 0.0, 0.0, 0.0]
+                        )
+                    else:
+                        body.add_geom(
+                            name=mesh_name + "_prim",
+                            type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                            size=[size_x / 2, size_z / 2, 0],
+                            pos=[pos_x, pos_y, pos_z],
+                            quat=[quat_w, quat_x, quat_y, quat_z]
+                        )
+
+    mj_model = mj_spec.compile()
+    xml_string = mj_spec.to_xml()
+
+    with open(xml_path_output, "w") as f:
+        f.write(xml_string)
+
+def update_geom_elements(xml_file, geom_data):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+
+    for mesh in root.findall(".//mesh"):
+        for parent in root.findall(".//"):
+            if mesh in parent:
+                parent.remove(mesh)
+                break
+
+    for geom in root.findall(".//geom[@class='task_board_visual']"):
+        for parent in root.findall(".//"):
+            if geom in parent:
+                parent.remove(geom)
+                break
+
+    for geom in root.findall(".//geom[@class='task_board_probe_visual']"):
+        for parent in root.findall(".//"):
+            if geom in parent:
+                parent.remove(geom)
+                break
+
+    for geom in root.findall(".//geom"):
+        name = geom.get("name")
+        if name in geom_data:
+            data = geom_data[name]
+            geom.set("type", data["type"])
+            if "mesh" in geom.attrib:
+                del geom.attrib["mesh"]
+            size_in_x = data["size_x"]
+            size_in_y = data["size_y"]
+            size_in_z = data["size_z"]
+            geom.set("size", f"{size_in_x} {size_in_y} {size_in_z}")
+
+    tree.write(xml_file, encoding="unicode")
+
+
+
+def mesh_to_shape(blend_directory: str, read_xml_filepath: str, valid_classes: list, xml_path_output: str, overwrite: bool):
     figures_db = {}
-    geom_data = parse_mujoco_xml(read_xmlfile_name)
+    body_data = extract_body_properties(read_xml_filepath)
+    geom_data = parse_mujoco_xml(read_xml_filepath, valid_classes)
 
     for filename in os.listdir(blend_directory):
         if filename.endswith(".blend"):
             blend_file_path = os.path.join(blend_directory, filename)
             bpy.ops.wm.open_mainfile(filepath=blend_file_path)
-            mesh_name = filename.replace(".blend", "")
+            mesh_name = filename.replace(".blend","")
             type_of_figure, dim_x, dim_y, dim_z, volume, deviation = extract_characteristics()
             figures_db[mesh_name] = [type_of_figure, dim_x, dim_y, dim_z, volume, deviation]
 
-    merged_db = merge_databases(figures_db, geom_data)
-    '''
-    for mesh, details in merged_db.items():
-        print(f"Mesh: {mesh}")
-        print(f"  [0] Figure: {details[0]} ",type(details[0]))
-        print(f"  [1] X: {details[1]}",type(details[1]))
-        print(f"  [2] Y: {details[2]}",type(details[2]))
-        print(f"  [3] Z: {details[3]}",type(details[3]))
-        print(f"  [4] Volume: {details[4]}",type(details[4]))
-        print(f"  [5] Deviation: {details[5]} ",type(details[5]))
-        print(f"  [6] name: {details[6]}",type(details[6]))
-        print(f"  [7] pos_x: {details[7]}",type(details[7]))
-        print(f"  [8] pos_y: {details[8]}",type(details[8]))
-        print(f"  [9] pos_z: {details[9]}",type(details[9]))
-        print(f"  [10] r: {details[10]} ",type(details[10]))
-        print(f"  [11] g: {details[11]} ",type(details[11]))
-        print(f"  [12] b: {details[12]} ",type(details[12]))
-        print(f"  [13] a: {details[13]} ",type(details[13]))
-        print(f"  [14] quat_x: {details[14]}",type(details[14]))
-        print(f"  [15] quat_y: {details[15]}",type(details[15]))
-        print(f"  [16] quat_z: {details[16]}",type(details[16]))
-        print(f"  [17] quat_w: {details[17]}",type(details[17]))
-        print(f"  [18] geom_class: {details[18]}",type(details[18]))
-        print("\n")
-    '''
-    cleaned_db, no_position_db = clean_merged_db(merged_db)
+    for key, value in geom_data.items():
+        if (value["type"] == "mesh") and (value["size_x"] is None):
+            mesh_name = value["mesh"]
 
-    for mesh, details in cleaned_db.items():
-        print(f"Mesh: {mesh}")
-        print(f"  [0] Figure: {details[0]} ",type(details[0]))
-        print(f"  [1] X: {details[1]}",type(details[1]))
-        print(f"  [2] Y: {details[2]}",type(details[2]))
-        print(f"  [3] Z: {details[3]}",type(details[3]))
-        print(f"  [4] Volume: {details[4]}",type(details[4]))
-        print(f"  [5] Deviation: {details[5]} ",type(details[5]))
-        print(f"  [6] name: {details[6]}",type(details[6]))
-        print(f"  [7] pos_x: {details[7]}",type(details[7]))
-        print(f"  [8] pos_y: {details[8]}",type(details[8]))
-        print(f"  [9] pos_z: {details[9]}",type(details[9]))
-        print(f"  [10] r: {details[10]} ",type(details[10]))
-        print(f"  [11] g: {details[11]} ",type(details[11]))
-        print(f"  [12] b: {details[12]} ",type(details[12]))
-        print(f"  [13] a: {details[13]} ",type(details[13]))
-        print(f"  [14] quat_x: {details[14]}",type(details[14]))
-        print(f"  [15] quat_y: {details[15]}",type(details[15]))
-        print(f"  [16] quat_z: {details[16]}",type(details[16]))
-        print(f"  [17] quat_w: {details[17]}",type(details[17]))
-        print(f"  [18] geom_class: {details[18]}",type(details[18]))
-        print("\n")
+            if mesh_name in figures_db:
+                shape = figures_db[mesh_name][0]
+                size_x = figures_db[mesh_name][1]
+                size_y = figures_db[mesh_name][2]
+                size_z = figures_db[mesh_name][3]
 
-    mujoco_creator(cleaned_db, xml_path)
+                value["type"] = shape
+                value["size_x"] = size_x
+                value["size_y"] = size_y
+                value["size_z"] = size_z
+        else:
+            value["mesh"] = "No_mesh"
+
+    # for key, value in body_data.items():
+    #    print(key)
+    #    print(value)
+
+    if overwrite is True:
+        update_geom_elements(read_xml_filepath,geom_data)
+    else:
+        mujoco_creator(body_data, geom_data, xml_path_output)

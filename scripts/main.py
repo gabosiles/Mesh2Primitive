@@ -13,9 +13,11 @@ if __name__ == '__main__':
     stl_directory = "../resources/input/task_board/meshes/stl"
     stl_to_blend(stl_directory)
     blend_directory = "../resources/input/task_board/meshes/blend"
-    xml_read_path = "../resources/input/task_board.xml"
-    xml_write_path = "../resources/output/default.xml"
-    mesh_to_shape(blend_directory,xml_read_path, xml_write_path)
+    xml_read_path = "../resources/input/task_board/task_board.xml"
+    xml_write_path = "../resources/output/defaultest.xml"
+    valid_classes = ["task_board_collision", "task_board_probe_collision"]
+    mesh_to_shape(blend_directory,xml_read_path,valid_classes, xml_write_path, True)
+
 '''
 from mesh_to_shape import mesh_to_shape
 if __name__ == '__main__':
