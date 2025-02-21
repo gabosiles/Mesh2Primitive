@@ -4,6 +4,7 @@ import bmesh
 import math
 import os
 import mujoco
+import shutil
 
 
 def calculate_volume_of_a_mesh(mesh):
@@ -355,7 +356,7 @@ def update_geom_elements(xml_file, geom_data):
             size_in_x = data["size_x"]
             size_in_y = data["size_y"]
             size_in_z = data["size_z"]
-            geom.set("size", f"{size_in_x} {size_in_y} {size_in_z}")
+            geom.set("size", f"{size_in_x/2} {size_in_y/2} {size_in_z/2}")
 
     tree.write(xml_file, encoding="unicode")
 
@@ -396,6 +397,12 @@ def mesh_to_shape(blend_directory: str, read_xml_filepath: str, valid_classes: l
     #    print(value)
 
     if overwrite is True:
-        update_geom_elements(read_xml_filepath,geom_data)
+        path_of_xml_read_file = os.path.dirname(read_xml_filepath)
+        path_to_paste_xml_to_overwrite = os.path.join(os.path.dirname(path_of_xml_read_file),"output")
+        os.makedirs(path_to_paste_xml_to_overwrite, exist_ok=True)
+
+        shutil.copy(read_xml_filepath, path_to_paste_xml_to_overwrite)
+        xml_overwrite_path = os.path.join(path_to_paste_xml_to_overwrite,'task_board.xml')
+        update_geom_elements(xml_overwrite_path, geom_data)
     else:
         mujoco_creator(body_data, geom_data, xml_path_output)
