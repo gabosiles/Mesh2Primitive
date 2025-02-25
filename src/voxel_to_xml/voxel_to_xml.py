@@ -93,7 +93,8 @@ def main_voxel_converter(octree_resolution, stl_directory,blend_folder: str):
             bpy.ops.wm.save_mainfile()
 
             scene_name = file.replace(".blend", "")
-            mujoco_creator(voxel_dict, longitude_cube[0], stl_directory, scene_name)
+            #mujoco_creator(voxel_dict, longitude_cube[0], stl_directory, scene_name)
+            return (voxel_dict, longitude_cube[0])
 '''
 
 def calculate_volume_of_a_mesh(mesh):
