@@ -21,12 +21,13 @@ class SimplificationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dic, cls.size = main_voxel_converter(4,
+        cls.dic, cls.size, cls.name_file = main_voxel_converter(4,
                              "../resources/input/voxelization/visual_stl",
                              "../resources/input/voxelization/blend")
 
     def test_something(self):
         cubes = []
+
 
         for cube_name, cube in tqdm.tqdm(self.dic.items()):
 
@@ -66,7 +67,7 @@ class SimplificationTestCase(unittest.TestCase):
                 print(size_x, size_y, size_z)
                 xml_dict[f"cube_{i}"] = [size_x, size_y, size_z, center_x, center_y, center_z]
                 i += 1
-        mujoco_creator(xml_dict,"../resources/input/voxelization/visual_stl")
+        mujoco_creator(xml_dict,"../resources/input/voxelization/visual_stl",self.name_file)
 
 if __name__ == '__main__':
     unittest.main()
