@@ -29,12 +29,27 @@ def simplified_mesh_properties_extraction():
         return figure_mesh
 
 def main(stl_directory):
+
+    # creating output directory
+    output_path = os.path.dirname(stl_directory) #stl directory location
+    output_directory = os.path.join(output_path, "m2p_output")
+    os.makedirs(output_directory, exist_ok=True)
+
+    obj_output_directory = os.path.join(output_directory, "obj")
+    blend_output_directory = os.path.join(output_directory, "blend")
+    xml_output_directory = os.path.join(output_directory, "xml")
+
+    for stl_file in os.listdir(stl_directory):
+        if stl_file.endswith(".stl"):
+            print(stl_file)
     "Simplified mesh is created"
     "Saved in the blender directory"
+    '''
     output_directory = os.path.join(os.path.dirname(stl_directory), "blend")
     for file in os.listdir(output_directory):
         "Opens Blend file"
         simplified_directory = simplified_mesh_properties_extraction()
         scene_name = file.replace(".blend", "")
         mujoco_creator(simplified_directory, stl_directory,scene_name)
+    '''
 

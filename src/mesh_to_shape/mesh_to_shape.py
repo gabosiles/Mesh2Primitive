@@ -5,6 +5,7 @@ import math
 import os
 import mujoco
 import shutil
+from stl_to_blend.stl_to_blend import stl_to_blend
 
 
 def calculate_volume_of_a_mesh(mesh):
@@ -362,14 +363,17 @@ def update_geom_elements(xml_file, geom_data):
 
 
 
-def mesh_to_shape(blend_directory: str, read_xml_filepath: str, valid_classes: list, xml_path_output: str, overwrite: bool):
+def mesh_to_shape(stl_directory: str, read_xml_filepath: str, valid_classes: list, xml_path_output: str, overwrite: bool):
     figures_db = {}
     body_data = extract_body_properties(read_xml_filepath)
     geom_data = parse_mujoco_xml(read_xml_filepath, valid_classes)
 
-    for filename in os.listdir(blend_directory):
+    stl_to_blend(stl_directory)
+    output_directory = os.path.join(os.path.dirname(stl_directory), "blend")
+
+    for filename in os.listdir(output_directory):
         if filename.endswith(".blend"):
-            blend_file_path = os.path.join(blend_directory, filename)
+            blend_file_path = os.path.join(output_directory, filename)
             bpy.ops.wm.open_mainfile(filepath=blend_file_path)
             mesh_name = filename.replace(".blend","")
             type_of_figure, dim_x, dim_y, dim_z, volume, deviation = extract_characteristics()
@@ -395,14 +399,14 @@ def mesh_to_shape(blend_directory: str, read_xml_filepath: str, valid_classes: l
     # for key, value in body_data.items():
     #    print(key)
     #    print(value)
+    path_of_xml_read_file = os.path.dirname(read_xml_filepath)
+    path_to_paste_xml_to_overwrite = os.path.join(os.path.dirname(path_of_xml_read_file), "output")
+    os.makedirs(path_to_paste_xml_to_overwrite, exist_ok=True)
 
     if overwrite is True:
-        path_of_xml_read_file = os.path.dirname(read_xml_filepath)
-        path_to_paste_xml_to_overwrite = os.path.join(os.path.dirname(path_of_xml_read_file),"output")
-        os.makedirs(path_to_paste_xml_to_overwrite, exist_ok=True)
-
         shutil.copy(read_xml_filepath, path_to_paste_xml_to_overwrite)
         xml_overwrite_path = os.path.join(path_to_paste_xml_to_overwrite,'task_board.xml')
         update_geom_elements(xml_overwrite_path, geom_data)
     else:
+        xml_path_output = os.path.join(path_to_paste_xml_to_overwrite, "output_file.xml")
         mujoco_creator(body_data, geom_data, xml_path_output)

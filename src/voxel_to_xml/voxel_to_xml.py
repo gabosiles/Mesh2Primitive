@@ -9,6 +9,7 @@ from voxelization_properties.voxelization_properties import voxel_dic
 
 def main_voxel_converter(octree_resolution, stl_directory, blend_folder: str):
     stl_to_blend(stl_directory)
+
     for file in os.listdir(blend_folder):
         if file.endswith(".blend"):
             blend_path = os.path.join(blend_folder, file)
