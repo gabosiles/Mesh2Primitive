@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.12 virtualenv at ~/.virtualenvs/mesh_to_shape" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (mesh_to_shape)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (Mesh2Primitive)" project-jdk-type="Python SDK" />
 </project>

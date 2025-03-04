@@ -363,13 +363,13 @@ def update_geom_elements(xml_file, geom_data):
 
 
 
-def mesh_to_shape(stl_directory: str, read_xml_filepath: str, valid_classes: list, xml_path_output: str, overwrite: bool):
+def mesh_to_shape(stl_directory: str, read_xml_filepath: str, valid_classes: list, output_path: str, overwrite: bool):
     figures_db = {}
     body_data = extract_body_properties(read_xml_filepath)
     geom_data = parse_mujoco_xml(read_xml_filepath, valid_classes)
 
     stl_to_blend(stl_directory)
-    output_directory = os.path.join(os.path.dirname(stl_directory), "blend")
+    output_directory = os.path.join(os.path.dirname(output_path), "blend")
 
     for filename in os.listdir(output_directory):
         if filename.endswith(".blend"):
