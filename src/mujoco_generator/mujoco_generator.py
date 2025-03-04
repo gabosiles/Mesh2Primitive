@@ -1,8 +1,8 @@
 import os
 import mujoco
 
-def mujoco_creator(geometry_dict, stl_directory: str,name_file):
-    output_directory = os.path.join(os.path.dirname(stl_directory), "xml")
+def mujoco_creator(geometry_dict, out_directory: str,name_file):
+    output_directory = os.path.join(out_directory, "voxelized_xmls")
     os.makedirs(output_directory, exist_ok=True)
     output_file = os.path.join(output_directory, f"{name_file}.xml")
 

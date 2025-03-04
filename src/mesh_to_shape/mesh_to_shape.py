@@ -400,7 +400,7 @@ def mesh_to_shape(stl_directory: str, read_xml_filepath: str, valid_classes: lis
     #    print(key)
     #    print(value)
     path_of_xml_read_file = os.path.dirname(read_xml_filepath)
-    path_to_paste_xml_to_overwrite = os.path.join(os.path.dirname(path_of_xml_read_file), "output")
+    path_to_paste_xml_to_overwrite = os.path.join(os.path.dirname((os.path.dirname(path_of_xml_read_file))),"output")
     os.makedirs(path_to_paste_xml_to_overwrite, exist_ok=True)
 
     if overwrite is True:

@@ -10,7 +10,7 @@ from stl_to_blend import stl_to_blend
 from mesh_to_shape import mesh_to_shape
 
 if __name__ == '__main__':
-    stl_directory = "../resources/task_board/meshes/stl"
+    stl_directory = "../resources/input/task_board/meshes/stl"
     xml_read_path = "../resources/input/task_board/task_board.xml"
     xml_write_path = "../resources/output/default_test.xml"
     valid_classes = ["task_board_collision", "task_board_probe_collision"]
